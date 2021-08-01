@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +26,6 @@ public class WalletCommandService {
                         .build())
                 .map(walletRepository::save)
                 .map(walletEntity -> Mono.just(modelMapper.map(walletEntity, WalletDto.class)))
-                .get();
+                .orElse(Mono.empty());
     }
 }

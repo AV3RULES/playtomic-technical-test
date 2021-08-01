@@ -38,6 +38,7 @@ class WalletCommandServiceTest {
         WalletEntity walletEntityUpdated = WalletEntity.builder().id(givenId).amountCurrency("EUR")
                 .amountValue(walletEntityStored.getAmountValue().subtract(new BigDecimal(givenChargeAmount))).build();
         when(walletRepository.findById(givenId)).thenReturn(Optional.of(walletEntityStored));
+        when(walletRepository.save(walletEntityUpdated)).thenReturn(walletEntityUpdated);
 
         WalletDto expectedWalletDto = modelMapper.map(walletEntityUpdated, WalletDto.class);
 
