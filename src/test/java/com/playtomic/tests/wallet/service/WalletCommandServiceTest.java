@@ -50,4 +50,20 @@ class WalletCommandServiceTest {
                 .expectComplete()
                 .verify();
     }
+
+    @Test
+    void shouldReturnMonoEmpty_givenId_whenWalletNotExist() {
+        //given
+        int givenId = 123;
+        String givenChargeAmount = "10.00";
+        when(walletRepository.findById(givenId)).thenReturn(Optional.empty());
+
+        //when
+        var actualWalletDto = walletCommandService.charge(givenId, givenChargeAmount);
+
+        //then
+        StepVerifier.create(actualWalletDto)
+                .expectComplete()
+                .verify();
+    }
 }

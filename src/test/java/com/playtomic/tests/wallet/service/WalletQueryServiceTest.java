@@ -52,7 +52,7 @@ class WalletQueryServiceTest {
     }
 
     @Test
-    void shouldReturnErrorMono_givenId_whenWalletNotExist() {
+    void shouldReturnMonoEmpty_givenId_whenWalletNotExist() {
         //given
         int givenId = 123;
         when(walletRepository.findById(givenId)).thenReturn(Optional.empty());
@@ -60,6 +60,7 @@ class WalletQueryServiceTest {
         //when
         var actualErrorMono = walletQueryService.retrieveWalletDataById(givenId);
 
+        //then
         StepVerifier.create(actualErrorMono)
                 .expectComplete()
                 .verify();
