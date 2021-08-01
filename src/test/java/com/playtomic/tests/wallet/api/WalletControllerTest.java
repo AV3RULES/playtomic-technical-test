@@ -83,4 +83,22 @@ class WalletControllerTest {
                 .exchange()
                 .expectStatus().isNotFound();
     }
+
+    @Test
+    void shouldReturnMonoResponseEntityOK_givenIdAndAmount_whenRechargeOK() {
+        int givenId = 123;
+        String givenChargeAmount = "10.00";
+        WalletEntity givenWalletEntity = WalletEntity.builder().id(givenId).amountCurrency("EUR").amountValue(new BigDecimal("42.00")).build();
+        walletRepository.save(givenWalletEntity);
+
+        webTestClient.put()
+                .uri(uriBuilder ->
+                        uriBuilder
+                                .path("/wallet/recharge")
+                                .queryParam("id", givenId)
+                                .queryParam("amount", givenChargeAmount)
+                                .build())
+                .exchange()
+                .expectStatus().isOk();
+    }
 }
