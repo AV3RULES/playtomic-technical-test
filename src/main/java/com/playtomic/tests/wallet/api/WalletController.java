@@ -33,6 +33,7 @@ public class WalletController {
 
     @PutMapping("/wallet/recharge")
     public Mono<ResponseEntity<WalletDto>> rechargeAmount(@RequestParam int id, @RequestParam String amount) {
-        return null;
+        return walletCommandService.recharge(id, amount)
+                .map(wallet -> new ResponseEntity<>(wallet, HttpStatus.OK));
     }
 }
