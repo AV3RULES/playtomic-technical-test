@@ -4,6 +4,6 @@ import com.playtomic.tests.wallet.exception.WalletException;
 
 import java.math.BigDecimal;
 
-public interface PaymentService {
+public interface ThirdPartyPaymentService {
     void charge(BigDecimal amount) throws WalletException;
 }

@@ -6,17 +6,17 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 
-public class ThirdPartyPaymentServiceTest {
+public class PayPalPaymentServiceTest {
 
-    ThirdPartyPaymentService s = new ThirdPartyPaymentService();
+    PayPalPaymentService payPalPaymentService = new PayPalPaymentService();
 
     @Test(expected = WalletException.class)
     public void test_exception() throws WalletException {
-        s.charge(new BigDecimal(5));
+        payPalPaymentService.charge(new BigDecimal(5));
     }
 
     @Test
     public void test_ok() throws WalletException {
-        s.charge(new BigDecimal(15));
+        payPalPaymentService.charge(new BigDecimal(15));
     }
 }

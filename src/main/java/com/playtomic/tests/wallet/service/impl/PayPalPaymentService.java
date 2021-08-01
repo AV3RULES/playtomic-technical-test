@@ -1,7 +1,7 @@
 package com.playtomic.tests.wallet.service.impl;
 
 import com.playtomic.tests.wallet.exception.WalletException;
-import com.playtomic.tests.wallet.service.PaymentService;
+import com.playtomic.tests.wallet.service.ThirdPartyPaymentService;
 
 import org.springframework.stereotype.Service;
 
@@ -14,8 +14,8 @@ import java.math.BigDecimal;
  * This is a dummy implementation which throws an error when trying to change less than 10€.
  */
 @Service
-public class ThirdPartyPaymentService implements PaymentService {
-    private BigDecimal threshold = new BigDecimal(10);
+public class PayPalPaymentService implements ThirdPartyPaymentService {
+    private final BigDecimal threshold = new BigDecimal(10);
 
     @Override
     public void charge(BigDecimal amount) throws WalletException {
