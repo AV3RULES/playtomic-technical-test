@@ -5,6 +5,7 @@ import com.playtomic.tests.wallet.model.WalletDto;
 import com.playtomic.tests.wallet.persistance.WalletEntity;
 import com.playtomic.tests.wallet.persistance.WalletRepository;
 import com.playtomic.tests.wallet.service.impl.PayPalPaymentService;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -15,10 +16,10 @@ import java.math.BigDecimal;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class WalletCommandService {
 
-    private final ModelMapper modelMapper = new ModelMapper();
+    private final ModelMapper modelMapper;
     private final WalletRepository walletRepository;
     private final PayPalPaymentService payPalPaymentService;
 

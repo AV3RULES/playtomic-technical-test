@@ -16,8 +16,8 @@ import java.math.BigDecimal;
 @ActiveProfiles("test")
 class WalletControllerTest {
 
-    private final ModelMapper modelMapper = new ModelMapper();
-
+    @Autowired
+    private ModelMapper modelMapper;
     @Autowired
     private WalletRepository walletRepository;
     @Autowired

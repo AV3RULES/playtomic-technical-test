@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 class WalletQueryServiceTest {
 
     @Spy
-    private final ModelMapper modelMapper = new ModelMapper();
+    private ModelMapper modelMapper;
 
     @Mock
     private WalletRepository walletRepository;
