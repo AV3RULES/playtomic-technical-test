@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
+import static com.playtomic.tests.wallet.model.PaymentServiceType.PAY_PAL;
+
 
 @Service
 public class PayPalPaymentService implements ThirdPartyPaymentService {
@@ -15,7 +17,7 @@ public class PayPalPaymentService implements ThirdPartyPaymentService {
 
     @Override
     public boolean isSatisfiedBy(String paymentType) {
-        return false;
+        return PAY_PAL.getName().equals(paymentType);
     }
 
     @Override
