@@ -35,8 +35,16 @@ class WalletControllerTest {
         webTestClient.get()
                 .uri("/wallet/{id}", givenId)
                 .exchange()
-                .expectStatus().isOk()
-                .expectBody(ResponseEntity.class)
-                .isEqualTo(expectedResponseEntity);
+                .expectStatus().isOk();
+    }
+
+    @Test
+    void shouldReturnMonoResponseEntityOK_givenId_whenFindByIdKO() {
+        int givenId = 123;
+
+        webTestClient.get()
+                .uri("/wallet/{id}", givenId)
+                .exchange()
+                .expectStatus().isNotFound();
     }
 }
