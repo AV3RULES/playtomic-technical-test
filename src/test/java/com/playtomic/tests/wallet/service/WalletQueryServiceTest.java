@@ -44,6 +44,7 @@ class WalletQueryServiceTest {
         //when
         var actualWalletDto = walletQueryService.retrieveWalletDataById(givenId);
 
+        //then
         StepVerifier.create(actualWalletDto)
                 .expectNext(expectedWalletDto)
                 .expectComplete()
