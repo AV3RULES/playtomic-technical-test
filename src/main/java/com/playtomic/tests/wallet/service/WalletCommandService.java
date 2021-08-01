@@ -35,7 +35,7 @@ public class WalletCommandService {
                 .orElse(Mono.empty());
     }
 
-    public Mono<WalletDto> recharge(int id, String rechargeAmount) {
+    public Mono<WalletDto> recharge(int id, String rechargeAmount, String paymentServiceType) {
         try {
             payPalPaymentService.charge(new BigDecimal(rechargeAmount));
             return walletRepository.findById(id)

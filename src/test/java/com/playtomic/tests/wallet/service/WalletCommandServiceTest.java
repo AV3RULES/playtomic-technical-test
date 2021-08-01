@@ -5,6 +5,7 @@ import com.playtomic.tests.wallet.model.WalletDto;
 import com.playtomic.tests.wallet.persistance.WalletEntity;
 import com.playtomic.tests.wallet.persistance.WalletRepository;
 import com.playtomic.tests.wallet.service.impl.PayPalPaymentService;
+import com.playtomic.tests.wallet.service.impl.StripePaymentService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
@@ -25,9 +27,13 @@ class WalletCommandServiceTest {
 
     @Spy
     private ModelMapper modelMapper;
+    @Spy
+    private List<ThirdPartyPaymentService> thirdPartyPaymentServices;
 
     @Mock
     private PayPalPaymentService payPalPaymentService;
+    @Mock
+    private StripePaymentService stripePaymentService;
     @Mock
     private WalletRepository walletRepository;
 
@@ -74,21 +80,24 @@ class WalletCommandServiceTest {
     }
 
     @Test
-    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenRechargeOK() {
+    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenPaymentServiceTypePayPal_andRechargeOK() {
         //given
         int givenId = 123;
         String givenRechargeAmount = "10.00";
+        String givenPaymentServiceType = "paypal";
         BigDecimal amount = new BigDecimal(givenRechargeAmount);
         WalletEntity walletEntityStored = WalletEntity.builder().id(givenId).amountCurrency("EUR").amountValue(new BigDecimal("42.00")).build();
         WalletEntity walletEntityUpdated = WalletEntity.builder().id(givenId).amountCurrency("EUR")
                 .amountValue(walletEntityStored.getAmountValue().add(amount)).build();
         when(walletRepository.findById(givenId)).thenReturn(Optional.of(walletEntityStored));
         when(walletRepository.save(walletEntityUpdated)).thenReturn(walletEntityUpdated);
+        when(payPalPaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(true);
+        when(stripePaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
 
         WalletDto expectedWalletDto = modelMapper.map(walletEntityUpdated, WalletDto.class);
 
         //when
-        var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount);
+        var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount, givenPaymentServiceType);
 
         //then
         StepVerifier.create(actualWalletDto)
@@ -99,19 +108,70 @@ class WalletCommandServiceTest {
     }
 
     @Test
-    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenRechargeKO() {
+    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenPaymentServiceTypeStripe_andRechargeOK() {
         //given
         int givenId = 123;
         String givenRechargeAmount = "10.00";
+        String givenPaymentServiceType = "stripe";
         BigDecimal amount = new BigDecimal(givenRechargeAmount);
-        WalletException exception = new WalletException(HttpStatus.BAD_REQUEST, "Paypal service not allow charges less than 10");
         WalletEntity walletEntityStored = WalletEntity.builder().id(givenId).amountCurrency("EUR").amountValue(new BigDecimal("42.00")).build();
         WalletEntity walletEntityUpdated = WalletEntity.builder().id(givenId).amountCurrency("EUR")
                 .amountValue(walletEntityStored.getAmountValue().add(amount)).build();
+        when(walletRepository.findById(givenId)).thenReturn(Optional.of(walletEntityStored));
+        when(walletRepository.save(walletEntityUpdated)).thenReturn(walletEntityUpdated);
+        when(payPalPaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
+        when(stripePaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(true);
+
+        WalletDto expectedWalletDto = modelMapper.map(walletEntityUpdated, WalletDto.class);
+
+        //when
+        var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount, givenPaymentServiceType);
+
+        //then
+        StepVerifier.create(actualWalletDto)
+                .expectNext(expectedWalletDto)
+                .expectComplete()
+                .verify();
+        verify(stripePaymentService).charge(amount);
+    }
+
+    @Test
+    void shouldReturnMonoError_givenIdAndAmount_whenPaymentServiceTypeNotSupport() {
+        //given
+        int givenId = 123;
+        String givenRechargeAmount = "10.00";
+        String givenPaymentServiceType = "invalid";
+        BigDecimal amount = new BigDecimal(givenRechargeAmount);
+        WalletException exception = new WalletException(HttpStatus.BAD_REQUEST, "ThirdParty payment service not support");
+        when(payPalPaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
+        when(stripePaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
         doThrow(exception).when(payPalPaymentService).charge(amount);
 
         //when
-        var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount);
+        var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount, givenPaymentServiceType);
+
+        //then
+        StepVerifier.create(actualWalletDto)
+                .expectErrorMatches(e -> e instanceof WalletException && exception.equals(e))
+                .verify();
+        verify(payPalPaymentService).charge(amount);
+    }
+
+
+    @Test
+    void shouldReturnMonoError_givenIdAndAmount_whenThirdPartyPaymentServiceReturnKO() {
+        //given
+        int givenId = 123;
+        String givenRechargeAmount = "10.00";
+        String givenPaymentServiceType = "paypal";
+        BigDecimal amount = new BigDecimal(givenRechargeAmount);
+        WalletException exception = new WalletException(HttpStatus.BAD_REQUEST, "Paypal service not allow charges less than 10");
+        when(payPalPaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(true);
+        when(stripePaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
+        doThrow(exception).when(payPalPaymentService).charge(amount);
+
+        //when
+        var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount, givenPaymentServiceType);
 
         //then
         StepVerifier.create(actualWalletDto)
