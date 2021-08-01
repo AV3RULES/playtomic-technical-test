@@ -1,5 +1,6 @@
 package com.playtomic.tests.wallet.service;
 
+import com.playtomic.tests.wallet.exception.WalletException;
 import com.playtomic.tests.wallet.model.WalletDto;
 import com.playtomic.tests.wallet.persistance.WalletEntity;
 import com.playtomic.tests.wallet.persistance.WalletRepository;
@@ -10,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
@@ -44,6 +46,22 @@ class WalletQueryServiceTest {
         StepVerifier.create(actualWalletDto)
                 .expectNext(expectedWalletDto)
                 .expectComplete()
+                .verify();
+    }
+
+    @Test
+    void shouldReturnErrorMono_givenId_whenWalletNotExist() {
+        //given
+        int givenId = 123;
+        when(walletRepository.findById(givenId)).thenReturn(Optional.empty());
+
+        WalletException expectedException = new WalletException(HttpStatus.NOT_FOUND, "Wallet with id " + givenId + " not found");
+
+        //when
+        var actualErrorMono = walletQueryService.retrieveWalletDataById(givenId);
+
+        StepVerifier.create(actualErrorMono)
+                .expectErrorMatches(e -> e instanceof WalletException && expectedException.equals(e))
                 .verify();
     }
 
