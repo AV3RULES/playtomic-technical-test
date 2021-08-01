@@ -28,4 +28,8 @@ public class WalletCommandService {
                 .map(walletEntity -> Mono.just(modelMapper.map(walletEntity, WalletDto.class)))
                 .orElse(Mono.empty());
     }
+
+    public Mono<WalletDto> recharge(int id, String rechargeAmount) {
+        return Mono.empty();
+    }
 }

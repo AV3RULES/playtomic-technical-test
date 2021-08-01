@@ -67,4 +67,27 @@ class WalletCommandServiceTest {
                 .expectComplete()
                 .verify();
     }
+
+    @Test
+    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenRechargeOK() {
+        //given
+        int givenId = 123;
+        String givenRechargeAmount = "10.00";
+        WalletEntity walletEntityStored = WalletEntity.builder().id(givenId).amountCurrency("EUR").amountValue(new BigDecimal("42.00")).build();
+        WalletEntity walletEntityUpdated = WalletEntity.builder().id(givenId).amountCurrency("EUR")
+                .amountValue(walletEntityStored.getAmountValue().add(new BigDecimal(givenRechargeAmount))).build();
+        when(walletRepository.findById(givenId)).thenReturn(Optional.of(walletEntityStored));
+        when(walletRepository.save(walletEntityUpdated)).thenReturn(walletEntityUpdated);
+
+        WalletDto expectedWalletDto = modelMapper.map(walletEntityUpdated, WalletDto.class);
+
+        //when
+        var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount);
+
+        //then
+        StepVerifier.create(actualWalletDto)
+                .expectNext(expectedWalletDto)
+                .expectComplete()
+                .verify();
+    }
 }
