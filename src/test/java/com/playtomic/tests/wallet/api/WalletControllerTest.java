@@ -30,8 +30,6 @@ class WalletControllerTest {
         WalletEntity givenWalletEntity = WalletEntity.builder().id(givenId).amountCurrency("EUR").amountValue(new BigDecimal("42.00")).build();
         walletRepository.save(givenWalletEntity);
 
-        ResponseEntity<WalletDto> expectedResponseEntity = ResponseEntity.ok(modelMapper.map(givenWalletEntity, WalletDto.class));
-
         webTestClient.get()
                 .uri("/wallet/{id}", givenId)
                 .exchange()
@@ -46,5 +44,23 @@ class WalletControllerTest {
                 .uri("/wallet/{id}", givenId)
                 .exchange()
                 .expectStatus().isNotFound();
+    }
+
+    @Test
+    void shouldReturnMonoResponseEntityOK_givenId_whenChargeOK() {
+        int givenId = 123;
+        String givenChargeAmount = "10.00";
+        WalletEntity givenWalletEntity = WalletEntity.builder().id(givenId).amountCurrency("EUR").amountValue(new BigDecimal("42.00")).build();
+        walletRepository.save(givenWalletEntity);
+
+        webTestClient.put()
+                .uri(uriBuilder ->
+                        uriBuilder
+                                .path("/wallet/charge")
+                                .queryParam("id", givenId)
+                                .queryParam("amount", givenChargeAmount)
+                                .build())
+                .exchange()
+                .expectStatus().isOk();
     }
 }
