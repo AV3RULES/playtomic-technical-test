@@ -1,13 +1,12 @@
 package com.playtomic.tests.wallet.api;
 
-import com.playtomic.tests.wallet.model.WalletDto;
 import com.playtomic.tests.wallet.persistance.WalletEntity;
 import com.playtomic.tests.wallet.persistance.WalletRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -23,6 +22,11 @@ class WalletControllerTest {
     private WalletRepository walletRepository;
     @Autowired
     private WebTestClient webTestClient;
+
+    @BeforeEach
+    void setUp() {
+        walletRepository.deleteAll();
+    }
 
     @Test
     void shouldReturnMonoResponseEntityOK_givenId_whenFindByIdOK() {

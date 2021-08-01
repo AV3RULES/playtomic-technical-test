@@ -26,6 +26,7 @@ public class WalletController {
 
     @PutMapping("/wallet/charge")
     public Mono<ResponseEntity<WalletDto>> chargeAmount(@RequestParam int id, @RequestParam String amount) throws WalletException {
-        return Mono.empty();
+        return walletCommandService.charge(id, amount)
+                .map(wallet -> new ResponseEntity<>(wallet, HttpStatus.OK));
     }
 }
