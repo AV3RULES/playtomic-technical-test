@@ -101,4 +101,20 @@ class WalletControllerTest {
                 .exchange()
                 .expectStatus().isOk();
     }
+
+    @Test
+    void shouldReturnMonoResponseEntityBAD_REQUEST_givenIdAndAmount_whenAmountLowerThan10KO() {
+        int givenId = 123;
+        String givenChargeAmount = "9.00";
+
+        webTestClient.put()
+                .uri(uriBuilder ->
+                        uriBuilder
+                                .path("/wallet/recharge")
+                                .queryParam("id", givenId)
+                                .queryParam("amount", givenChargeAmount)
+                                .build())
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
 }

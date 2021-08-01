@@ -7,11 +7,23 @@ import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 
+import static com.playtomic.tests.wallet.model.PaymentServiceType.PAY_PAL;
+import static com.playtomic.tests.wallet.model.PaymentServiceType.STRIPE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PayPalPaymentServiceTest {
 
     PayPalPaymentService payPalPaymentService = new PayPalPaymentService();
+
+    @Test
+    public void shouldReturnTrue_givenPaymentsType_whenPaypal() {
+        assertTrue(payPalPaymentService.isSatisfiedBy(PAY_PAL.getName()));
+    }
+
+    @Test
+    public void shouldReturnFalse_givenPaymentsType_whenNotPaypal() {
+        assertFalse(payPalPaymentService.isSatisfiedBy(STRIPE.getName()));
+    }
 
     @Test
     public void shouldThrowException_givenAmount_whenValueLowerThan10() throws WalletException {
