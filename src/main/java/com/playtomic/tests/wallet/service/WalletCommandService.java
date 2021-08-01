@@ -6,12 +6,14 @@ import com.playtomic.tests.wallet.persistance.WalletEntity;
 import com.playtomic.tests.wallet.persistance.WalletRepository;
 import com.playtomic.tests.wallet.service.impl.PayPalPaymentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WalletCommandService {
@@ -45,6 +47,7 @@ public class WalletCommandService {
                     .map(walletEntity -> Mono.just(modelMapper.map(walletEntity, WalletDto.class)))
                     .orElse(Mono.empty());
         } catch (WalletException exception) {
+            log.info("Error in third party payment service: {}", exception.getDescription());
             return Mono.error(exception);
         }
     }
