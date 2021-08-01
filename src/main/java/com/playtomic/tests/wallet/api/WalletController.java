@@ -1,6 +1,5 @@
 package com.playtomic.tests.wallet.api;
 
-import com.playtomic.tests.wallet.exception.WalletException;
 import com.playtomic.tests.wallet.model.WalletDto;
 import com.playtomic.tests.wallet.service.WalletCommandService;
 import com.playtomic.tests.wallet.service.WalletQueryService;
@@ -25,7 +24,7 @@ public class WalletController {
     }
 
     @PutMapping("/wallet/charge")
-    public Mono<ResponseEntity<WalletDto>> chargeAmount(@RequestParam int id, @RequestParam String amount) throws WalletException {
+    public Mono<ResponseEntity<WalletDto>> chargeAmount(@RequestParam int id, @RequestParam String amount) {
         return walletCommandService.charge(id, amount)
                 .map(wallet -> new ResponseEntity<>(wallet, HttpStatus.OK))
                 .defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));

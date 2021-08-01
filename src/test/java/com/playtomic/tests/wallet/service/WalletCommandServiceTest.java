@@ -1,5 +1,6 @@
 package com.playtomic.tests.wallet.service;
 
+import com.playtomic.tests.wallet.exception.WalletException;
 import com.playtomic.tests.wallet.model.WalletDto;
 import com.playtomic.tests.wallet.persistance.WalletEntity;
 import com.playtomic.tests.wallet.persistance.WalletRepository;
@@ -11,13 +12,13 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class WalletCommandServiceTest {
@@ -93,6 +94,28 @@ class WalletCommandServiceTest {
         StepVerifier.create(actualWalletDto)
                 .expectNext(expectedWalletDto)
                 .expectComplete()
+                .verify();
+        verify(payPalPaymentService).charge(amount);
+    }
+
+    @Test
+    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenRechargeKO() {
+        //given
+        int givenId = 123;
+        String givenRechargeAmount = "10.00";
+        BigDecimal amount = new BigDecimal(givenRechargeAmount);
+        WalletException exception = new WalletException(HttpStatus.BAD_REQUEST, "Paypal service not allow charges less than 10");
+        WalletEntity walletEntityStored = WalletEntity.builder().id(givenId).amountCurrency("EUR").amountValue(new BigDecimal("42.00")).build();
+        WalletEntity walletEntityUpdated = WalletEntity.builder().id(givenId).amountCurrency("EUR")
+                .amountValue(walletEntityStored.getAmountValue().add(amount)).build();
+        doThrow(exception).when(payPalPaymentService).charge(amount);
+
+        //when
+        var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount);
+
+        //then
+        StepVerifier.create(actualWalletDto)
+                .expectErrorMatches(e -> e instanceof WalletException && exception.equals(e))
                 .verify();
         verify(payPalPaymentService).charge(amount);
     }
