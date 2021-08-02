@@ -17,7 +17,10 @@ import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,7 +36,7 @@ class WalletQueryServiceTest {
     private WalletQueryService walletQueryService;
 
     @Test
-    void shouldReturnWalletDtoMono_givenId_whenWalletExist() {
+    void shouldReturnWalletDtoMono_givenId_whenWalletExist() throws ExecutionException, InterruptedException {
         //given
         int givenId = 123;
         WalletEntity givenWalletEntity = WalletEntity.builder().id(givenId).amountCurrency("EUR").amountValue(new BigDecimal("42.00")).build();
@@ -45,25 +48,21 @@ class WalletQueryServiceTest {
         var actualWalletDto = walletQueryService.retrieveWalletDataById(givenId);
 
         //then
-        StepVerifier.create(actualWalletDto)
-                .expectNext(expectedWalletDto)
-                .expectComplete()
-                .verify();
+        assertTrue(actualWalletDto.isDone());
+        assertEquals(expectedWalletDto, actualWalletDto.get());
     }
 
     @Test
-    void shouldReturnMonoEmpty_givenId_whenWalletNotExist() {
+    void shouldReturnError_givenId_whenWalletNotExist() {
         //given
         int givenId = 123;
         when(walletRepository.findById(givenId)).thenReturn(Optional.empty());
 
         //when
-        var actualErrorMono = walletQueryService.retrieveWalletDataById(givenId);
+        var actualError = walletQueryService.retrieveWalletDataById(givenId);
 
         //then
-        StepVerifier.create(actualErrorMono)
-                .expectComplete()
-                .verify();
+        assertTrue(actualError.isCompletedExceptionally());
     }
 
 }

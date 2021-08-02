@@ -21,7 +21,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +46,7 @@ class WalletCommandServiceTest {
     private WalletCommandService walletCommandService;
 
     @Test
-    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenChargeOK() {
+    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenChargeOK() throws ExecutionException, InterruptedException {
         //given
         int givenId = 123;
         String givenChargeAmount = "10.00";
@@ -59,10 +62,8 @@ class WalletCommandServiceTest {
         var actualWalletDto = walletCommandService.charge(givenId, givenChargeAmount);
 
         //then
-        StepVerifier.create(actualWalletDto)
-                .expectNext(expectedWalletDto)
-                .expectComplete()
-                .verify();
+        assertTrue(actualWalletDto.isDone());
+        assertEquals(expectedWalletDto, actualWalletDto.get());
     }
 
     @Test
@@ -76,13 +77,11 @@ class WalletCommandServiceTest {
         var actualWalletDto = walletCommandService.charge(givenId, givenChargeAmount);
 
         //then
-        StepVerifier.create(actualWalletDto)
-                .expectComplete()
-                .verify();
+        assertTrue(actualWalletDto.isCompletedExceptionally());
     }
 
     @Test
-    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenPaymentServiceTypePayPal_andRechargeOK() {
+    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenPaymentServiceTypePayPal_andRechargeOK() throws ExecutionException, InterruptedException {
         //given
         ReflectionTestUtils.setField(walletCommandService, "thirdPartyPaymentServices", initializePaymentServices());
         int givenId = 123;
@@ -102,16 +101,14 @@ class WalletCommandServiceTest {
         var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount, givenPaymentServiceType);
 
         //then
-        StepVerifier.create(actualWalletDto)
-                .expectNext(expectedWalletDto)
-                .expectComplete()
-                .verify();
+        assertTrue(actualWalletDto.isDone());
+        assertEquals(expectedWalletDto, actualWalletDto.get());
         verify(payPalPaymentService).charge(amount);
         verify(payPalPaymentService).isSatisfiedBy(givenPaymentServiceType);
     }
 
     @Test
-    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenPaymentServiceTypeStripe_andRechargeOK() {
+    void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenPaymentServiceTypeStripe_andRechargeOK() throws ExecutionException, InterruptedException {
         //given
         ReflectionTestUtils.setField(walletCommandService, "thirdPartyPaymentServices", initializePaymentServices());
         int givenId = 123;
@@ -132,10 +129,8 @@ class WalletCommandServiceTest {
         var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount, givenPaymentServiceType);
 
         //then
-        StepVerifier.create(actualWalletDto)
-                .expectNext(expectedWalletDto)
-                .expectComplete()
-                .verify();
+        assertTrue(actualWalletDto.isDone());
+        assertEquals(expectedWalletDto, actualWalletDto.get());
         verify(stripePaymentService).charge(amount);
         verify(stripePaymentService).isSatisfiedBy(givenPaymentServiceType);
     }
@@ -155,9 +150,7 @@ class WalletCommandServiceTest {
         var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount, givenPaymentServiceType);
 
         //then
-        StepVerifier.create(actualWalletDto)
-                .expectErrorMatches(e -> e instanceof WalletException && exception.equals(e))
-                .verify();
+        assertTrue(actualWalletDto.isCompletedExceptionally());
         verify(payPalPaymentService).isSatisfiedBy(givenPaymentServiceType);
         verify(stripePaymentService).isSatisfiedBy(givenPaymentServiceType);
     }
@@ -179,9 +172,7 @@ class WalletCommandServiceTest {
         var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount, givenPaymentServiceType);
 
         //then
-        StepVerifier.create(actualWalletDto)
-                .expectErrorMatches(e -> e instanceof WalletException && exception.equals(e))
-                .verify();
+        assertTrue(actualWalletDto.isCompletedExceptionally());
         verify(payPalPaymentService).charge(amount);
     }
 

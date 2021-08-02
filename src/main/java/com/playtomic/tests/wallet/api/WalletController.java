@@ -19,21 +19,21 @@ public class WalletController {
 
     @GetMapping("/wallet/{id}")
     public Mono<ResponseEntity<WalletDto>> retrieveWalletById(@PathVariable int id) {
-        return walletQueryService.retrieveWalletDataById(id)
+        return Mono.fromFuture(walletQueryService.retrieveWalletDataById(id))
                 .map(wallet -> new ResponseEntity<>(wallet, HttpStatus.OK))
-                .defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+                .onErrorResume(error -> Mono.just(new ResponseEntity<>(((WalletException) error).getHttpStatus())));
     }
 
     @PutMapping("/wallet/charge")
     public Mono<ResponseEntity<WalletDto>> chargeAmount(@RequestParam int id, @RequestParam String amount) {
-        return walletCommandService.charge(id, amount)
+        return Mono.fromFuture(walletCommandService.charge(id, amount))
                 .map(wallet -> new ResponseEntity<>(wallet, HttpStatus.OK))
-                .defaultIfEmpty(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+                .onErrorResume(error -> Mono.just(new ResponseEntity<>(((WalletException) error).getHttpStatus())));
     }
 
     @PutMapping("/wallet/recharge")
     public Mono<ResponseEntity<WalletDto>> rechargeAmount(@RequestParam int id, @RequestParam String amount, @RequestParam String paymentServiceType) {
-        return walletCommandService.recharge(id, amount, paymentServiceType)
+        return Mono.fromFuture(walletCommandService.recharge(id, amount, paymentServiceType))
                 .map(wallet -> new ResponseEntity<>(wallet, HttpStatus.OK))
                 .onErrorResume(error -> Mono.just(new ResponseEntity<>(((WalletException) error).getHttpStatus())));
     }
