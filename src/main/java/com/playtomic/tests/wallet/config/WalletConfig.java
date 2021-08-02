@@ -1,4 +1,4 @@
-package com.playtomic.tests.wallet;
+package com.playtomic.tests.wallet.config;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;

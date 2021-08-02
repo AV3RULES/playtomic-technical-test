@@ -5,6 +5,7 @@ import com.playtomic.tests.wallet.model.WalletDto;
 import com.playtomic.tests.wallet.persistance.WalletEntity;
 import com.playtomic.tests.wallet.persistance.WalletRepository;
 import com.playtomic.tests.wallet.service.impl.PayPalPaymentService;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -23,8 +24,8 @@ public class WalletCommandService {
     private final List<ThirdPartyPaymentService> thirdPartyPaymentServices;
     private final ModelMapper modelMapper;
     private final WalletRepository walletRepository;
-    private final PayPalPaymentService payPalPaymentService;
 
+    @Bulkhead(name = "command", type = Bulkhead.Type.THREADPOOL)
     public Mono<WalletDto> charge(int id, String chargeAmount) {
         return walletRepository.findById(id)
                 .map(walletEntity -> WalletEntity.builder()
@@ -37,12 +38,13 @@ public class WalletCommandService {
                 .orElse(Mono.empty());
     }
 
+    @Bulkhead(name = "command", type = Bulkhead.Type.THREADPOOL)
     public Mono<WalletDto> recharge(int id, String rechargeAmount, String paymentServiceType) {
         try {
             thirdPartyPaymentServices.stream()
                     .filter(paymentService -> paymentService.isSatisfiedBy(paymentServiceType))
                     .findAny()
-                    .orElseThrow(() -> new WalletException(HttpStatus.BAD_REQUEST, "ThirdParty payment service not support"))
+                    .orElseThrow(() -> new WalletException(HttpStatus.BAD_REQUEST, "ThirdParty payment service type not support"))
                     .charge(new BigDecimal(rechargeAmount));
         } catch (WalletException exception) {
             log.info("Error in third party payment service: {}", exception.getDescription());
