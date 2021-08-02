@@ -147,8 +147,7 @@ class WalletCommandServiceTest {
         int givenId = 123;
         String givenRechargeAmount = "10.00";
         String givenPaymentServiceType = "invalid";
-        BigDecimal amount = new BigDecimal(givenRechargeAmount);
-        WalletException exception = new WalletException(HttpStatus.BAD_REQUEST, "ThirdParty payment service not support");
+        WalletException exception = new WalletException(HttpStatus.BAD_REQUEST, "ThirdParty payment service type not support");
         when(payPalPaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
         when(stripePaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
 

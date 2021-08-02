@@ -5,21 +5,21 @@ import com.playtomic.tests.wallet.persistance.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.math.BigDecimal;
+import java.util.stream.Stream;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class WalletControllerTest {
 
-    @Autowired
-    private ModelMapper modelMapper;
     @Autowired
     private WalletRepository walletRepository;
     @Autowired
@@ -107,10 +107,9 @@ class WalletControllerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"paypal", "stripe"})
-    void shouldReturnMonoResponseEntityBAD_REQUEST_givenIdAndAmount_whenAmountLowerThan10KO(String paymentServiceType) {
+    @MethodSource("invalidAmountByPaymentType")
+    void shouldReturnMonoResponseEntityBAD_REQUEST_givenIdAndAmount_whenAmountInvalidKO(String paymentServiceType, String givenChargeAmount) {
         int givenId = 123;
-        String givenChargeAmount = "9.00";
 
         webTestClient.put()
                 .uri(uriBuilder ->
@@ -122,5 +121,12 @@ class WalletControllerTest {
                                 .build())
                 .exchange()
                 .expectStatus().isBadRequest();
+    }
+
+    private static Stream<Arguments> invalidAmountByPaymentType() {
+        return Stream.of(
+                Arguments.of("paypal", "9.00"),
+                Arguments.of("stripe", "10.50")
+        );
     }
 }
