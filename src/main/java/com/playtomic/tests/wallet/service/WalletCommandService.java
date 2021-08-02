@@ -4,8 +4,6 @@ import com.playtomic.tests.wallet.exception.WalletException;
 import com.playtomic.tests.wallet.model.WalletDto;
 import com.playtomic.tests.wallet.persistance.WalletEntity;
 import com.playtomic.tests.wallet.persistance.WalletRepository;
-import com.playtomic.tests.wallet.service.impl.PayPalPaymentService;
-import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -25,7 +23,7 @@ public class WalletCommandService {
     private final ModelMapper modelMapper;
     private final WalletRepository walletRepository;
 
-    @Bulkhead(name = "command", type = Bulkhead.Type.THREADPOOL)
+    //    @Bulkhead(name = "command", type = Bulkhead.Type.THREADPOOL)
     public Mono<WalletDto> charge(int id, String chargeAmount) {
         return walletRepository.findById(id)
                 .map(walletEntity -> WalletEntity.builder()
@@ -38,7 +36,7 @@ public class WalletCommandService {
                 .orElse(Mono.empty());
     }
 
-    @Bulkhead(name = "command", type = Bulkhead.Type.THREADPOOL)
+    //    @Bulkhead(name = "command", type = Bulkhead.Type.THREADPOOL)
     public Mono<WalletDto> recharge(int id, String rechargeAmount, String paymentServiceType) {
         try {
             thirdPartyPaymentServices.stream()

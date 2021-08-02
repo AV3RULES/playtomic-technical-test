@@ -4,6 +4,8 @@ import com.playtomic.tests.wallet.persistance.WalletEntity;
 import com.playtomic.tests.wallet.persistance.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -84,8 +86,9 @@ class WalletControllerTest {
                 .expectStatus().isNotFound();
     }
 
-    @Test
-    void shouldReturnMonoResponseEntityOK_givenIdAndAmount_whenRechargeOK() {
+    @ParameterizedTest
+    @ValueSource(strings = {"paypal", "stripe"})
+    void shouldReturnMonoResponseEntityOK_givenIdAndAmount_whenRechargeOK(String paymentServiceType) {
         int givenId = 123;
         String givenChargeAmount = "10.00";
         WalletEntity givenWalletEntity = WalletEntity.builder().id(givenId).amountCurrency("EUR").amountValue(new BigDecimal("42.00")).build();
@@ -97,13 +100,15 @@ class WalletControllerTest {
                                 .path("/wallet/recharge")
                                 .queryParam("id", givenId)
                                 .queryParam("amount", givenChargeAmount)
+                                .queryParam("paymentServiceType", paymentServiceType)
                                 .build())
                 .exchange()
                 .expectStatus().isOk();
     }
 
-    @Test
-    void shouldReturnMonoResponseEntityBAD_REQUEST_givenIdAndAmount_whenAmountLowerThan10KO() {
+    @ParameterizedTest
+    @ValueSource(strings = {"paypal", "stripe"})
+    void shouldReturnMonoResponseEntityBAD_REQUEST_givenIdAndAmount_whenAmountLowerThan10KO(String paymentServiceType) {
         int givenId = 123;
         String givenChargeAmount = "9.00";
 
@@ -113,6 +118,7 @@ class WalletControllerTest {
                                 .path("/wallet/recharge")
                                 .queryParam("id", givenId)
                                 .queryParam("amount", givenChargeAmount)
+                                .queryParam("paymentServiceType", paymentServiceType)
                                 .build())
                 .exchange()
                 .expectStatus().isBadRequest();

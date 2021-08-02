@@ -32,8 +32,8 @@ public class WalletController {
     }
 
     @PutMapping("/wallet/recharge")
-    public Mono<ResponseEntity<WalletDto>> rechargeAmount(@RequestParam int id, @RequestParam String amount) {
-        return walletCommandService.recharge(id, amount, "")
+    public Mono<ResponseEntity<WalletDto>> rechargeAmount(@RequestParam int id, @RequestParam String amount, @RequestParam String paymentServiceType) {
+        return walletCommandService.recharge(id, amount, paymentServiceType)
                 .map(wallet -> new ResponseEntity<>(wallet, HttpStatus.OK))
                 .onErrorResume(error -> Mono.just(new ResponseEntity<>(((WalletException) error).getHttpStatus())));
     }
