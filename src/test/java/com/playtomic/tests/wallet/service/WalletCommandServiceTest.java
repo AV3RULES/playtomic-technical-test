@@ -14,9 +14,11 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -82,6 +84,7 @@ class WalletCommandServiceTest {
     @Test
     void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenPaymentServiceTypePayPal_andRechargeOK() {
         //given
+        ReflectionTestUtils.setField(walletCommandService, "thirdPartyPaymentServices", initializePaymentServices());
         int givenId = 123;
         String givenRechargeAmount = "10.00";
         String givenPaymentServiceType = "paypal";
@@ -92,7 +95,6 @@ class WalletCommandServiceTest {
         when(walletRepository.findById(givenId)).thenReturn(Optional.of(walletEntityStored));
         when(walletRepository.save(walletEntityUpdated)).thenReturn(walletEntityUpdated);
         when(payPalPaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(true);
-        when(stripePaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
 
         WalletDto expectedWalletDto = modelMapper.map(walletEntityUpdated, WalletDto.class);
 
@@ -105,11 +107,13 @@ class WalletCommandServiceTest {
                 .expectComplete()
                 .verify();
         verify(payPalPaymentService).charge(amount);
+        verify(payPalPaymentService).isSatisfiedBy(givenPaymentServiceType);
     }
 
     @Test
     void shouldReturnUpdatedWalletDto_givenIdAndAmount_whenPaymentServiceTypeStripe_andRechargeOK() {
         //given
+        ReflectionTestUtils.setField(walletCommandService, "thirdPartyPaymentServices", initializePaymentServices());
         int givenId = 123;
         String givenRechargeAmount = "10.00";
         String givenPaymentServiceType = "stripe";
@@ -133,11 +137,13 @@ class WalletCommandServiceTest {
                 .expectComplete()
                 .verify();
         verify(stripePaymentService).charge(amount);
+        verify(stripePaymentService).isSatisfiedBy(givenPaymentServiceType);
     }
 
     @Test
     void shouldReturnMonoError_givenIdAndAmount_whenPaymentServiceTypeNotSupport() {
         //given
+        ReflectionTestUtils.setField(walletCommandService, "thirdPartyPaymentServices", initializePaymentServices());
         int givenId = 123;
         String givenRechargeAmount = "10.00";
         String givenPaymentServiceType = "invalid";
@@ -145,6 +151,29 @@ class WalletCommandServiceTest {
         WalletException exception = new WalletException(HttpStatus.BAD_REQUEST, "ThirdParty payment service not support");
         when(payPalPaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
         when(stripePaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
+
+        //when
+        var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount, givenPaymentServiceType);
+
+        //then
+        StepVerifier.create(actualWalletDto)
+                .expectErrorMatches(e -> e instanceof WalletException && exception.equals(e))
+                .verify();
+        verify(payPalPaymentService).isSatisfiedBy(givenPaymentServiceType);
+        verify(stripePaymentService).isSatisfiedBy(givenPaymentServiceType);
+    }
+
+
+    @Test
+    void shouldReturnMonoError_givenIdAndAmount_whenThirdPartyPaymentServiceReturnKO() {
+        //given
+        ReflectionTestUtils.setField(walletCommandService, "thirdPartyPaymentServices", initializePaymentServices());
+        int givenId = 123;
+        String givenRechargeAmount = "10.00";
+        String givenPaymentServiceType = "paypal";
+        BigDecimal amount = new BigDecimal(givenRechargeAmount);
+        WalletException exception = new WalletException(HttpStatus.BAD_REQUEST, "Paypal service not allow charges less than 10");
+        when(payPalPaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(true);
         doThrow(exception).when(payPalPaymentService).charge(amount);
 
         //when
@@ -157,26 +186,7 @@ class WalletCommandServiceTest {
         verify(payPalPaymentService).charge(amount);
     }
 
-
-    @Test
-    void shouldReturnMonoError_givenIdAndAmount_whenThirdPartyPaymentServiceReturnKO() {
-        //given
-        int givenId = 123;
-        String givenRechargeAmount = "10.00";
-        String givenPaymentServiceType = "paypal";
-        BigDecimal amount = new BigDecimal(givenRechargeAmount);
-        WalletException exception = new WalletException(HttpStatus.BAD_REQUEST, "Paypal service not allow charges less than 10");
-        when(payPalPaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(true);
-        when(stripePaymentService.isSatisfiedBy(givenPaymentServiceType)).thenReturn(false);
-        doThrow(exception).when(payPalPaymentService).charge(amount);
-
-        //when
-        var actualWalletDto = walletCommandService.recharge(givenId, givenRechargeAmount, givenPaymentServiceType);
-
-        //then
-        StepVerifier.create(actualWalletDto)
-                .expectErrorMatches(e -> e instanceof WalletException && exception.equals(e))
-                .verify();
-        verify(payPalPaymentService).charge(amount);
+    private List<ThirdPartyPaymentService> initializePaymentServices() {
+        return List.of(payPalPaymentService, stripePaymentService);
     }
 }

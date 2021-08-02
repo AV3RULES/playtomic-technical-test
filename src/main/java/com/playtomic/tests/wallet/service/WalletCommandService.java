@@ -6,19 +6,21 @@ import com.playtomic.tests.wallet.persistance.WalletEntity;
 import com.playtomic.tests.wallet.persistance.WalletRepository;
 import com.playtomic.tests.wallet.service.impl.PayPalPaymentService;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Slf4j
 @Service
 @AllArgsConstructor
 public class WalletCommandService {
 
+    private final List<ThirdPartyPaymentService> thirdPartyPaymentServices;
     private final ModelMapper modelMapper;
     private final WalletRepository walletRepository;
     private final PayPalPaymentService payPalPaymentService;
@@ -37,19 +39,24 @@ public class WalletCommandService {
 
     public Mono<WalletDto> recharge(int id, String rechargeAmount, String paymentServiceType) {
         try {
-            payPalPaymentService.charge(new BigDecimal(rechargeAmount));
-            return walletRepository.findById(id)
-                    .map(walletEntity -> WalletEntity.builder()
-                            .id(walletEntity.getId())
-                            .amountCurrency(walletEntity.getAmountCurrency())
-                            .amountValue(walletEntity.getAmountValue().add(new BigDecimal(rechargeAmount)))
-                            .build())
-                    .map(walletRepository::save)
-                    .map(walletEntity -> Mono.just(modelMapper.map(walletEntity, WalletDto.class)))
-                    .orElse(Mono.empty());
+            thirdPartyPaymentServices.stream()
+                    .filter(paymentService -> paymentService.isSatisfiedBy(paymentServiceType))
+                    .findAny()
+                    .orElseThrow(() -> new WalletException(HttpStatus.BAD_REQUEST, "ThirdParty payment service not support"))
+                    .charge(new BigDecimal(rechargeAmount));
         } catch (WalletException exception) {
             log.info("Error in third party payment service: {}", exception.getDescription());
             return Mono.error(exception);
         }
+        return walletRepository.findById(id)
+                .map(walletEntity -> WalletEntity.builder()
+                        .id(walletEntity.getId())
+                        .amountCurrency(walletEntity.getAmountCurrency())
+                        .amountValue(walletEntity.getAmountValue().add(new BigDecimal(rechargeAmount)))
+                        .build())
+                .map(walletRepository::save)
+                .map(walletEntity -> Mono.just(modelMapper.map(walletEntity, WalletDto.class)))
+                .orElse(Mono.empty());
+
     }
 }
